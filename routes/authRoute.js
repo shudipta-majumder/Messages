@@ -10,6 +10,8 @@ const {
   loginUser,
   getProfile,
   refreshAccessToken,
+  accountCreate,
+  transferFunds,
 } = require("../controllers/authController");
 const verifyToken = require("../middlewares/authMiddleware");
 const { getUserPermissions } = require("../controllers/authController");
@@ -21,5 +23,9 @@ router.post("/login", loginValidator, loginUser);
 router.get("/profile", verifyToken, getProfile);
 router.get("/refresh-permissions", verifyToken, getUserPermissions);
 router.post("/refresh-access-token", verifyToken, refreshAccessToken);
+
+// account route
+router.post("/create-account", accountCreate);
+router.post("/transfer-funds", transferFunds);
 
 module.exports = router;

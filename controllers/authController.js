@@ -1,5 +1,7 @@
 require("dotenv").config();
+const mongoose = require('mongoose')
 const User = require("../models/userModel");
+const Account = require("../models/account");
 const { validationResult } = require("express-validator");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
@@ -355,10 +357,66 @@ const getUserPermissions = async (req, res) => {
   }
 };
 
+const accountCreate = async (req, res) => {
+  try {
+    const account1 = new Account({
+      name: "John Doe",
+      balance: 500,
+      accountNumber: "123456789",
+    });
+    const account2 = new Account({
+      name: "Jane Smith",
+      balance: 300,
+      accountNumber: "987654321",
+    });
+
+    await account1.save();
+    await account2.save();
+    console.log("Accounts created successfully");
+  } catch (error) {
+    console.error("Error creating accounts:", error);
+  }
+};
+
+async function transferFundsById(senderId, receiverId, amount) {
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    const sender = await Account.findOne({ accountNumber: senderId }).session(session);
+    if (sender.balance < amount) {
+      throw new Error("Insufficient funds");
+    }
+    sender.balance -= amount;
+    await sender.save();
+
+    const receiver = await Account.findOne({ accountNumber: receiverId }).session(session);
+    receiver.balance += amount;
+    await receiver.save();
+
+    await session.commitTransaction();
+    console.log("Transaction completed successfully");
+  } catch (error) {
+    await session.abortTransaction();
+    console.error("Transaction failed and rolled back:", error.message);
+  } finally {
+    session.endSession();
+  }
+}
+
+const transferFunds = async (req, res) => {
+  transferFundsById("123456789", "987654321", 900)
+    .then(() => console.log("Done"))
+    .catch((error) => console.error("Error in transfer:", error));
+};
+
 module.exports = {
   registerUser,
   loginUser,
   refreshAccessToken,
   getProfile,
   getUserPermissions,
+  accountCreate,
+  transferFunds,
 };
